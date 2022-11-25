@@ -1,7 +1,6 @@
 import numpy as np
 import cv2 as cv
 from imutils.object_detection import non_max_suppression
-from utils import 
 
 def resize_image(image, width, height):
     h, w = image.shape[:2]
