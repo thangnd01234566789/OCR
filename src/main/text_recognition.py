@@ -1,5 +1,6 @@
 import numpy as np
 import cv2 as cv
+import pytesseract
 from imutils.object_detection import non_max_suppression
 from utils.utils import box_extractor, forward_passer
 import argparse
@@ -51,6 +52,7 @@ def main(image, width, height, detector, min_confidence):
     # Applying non-max superession to get boxes depicting text region
     boxes = non_max_suppression(np.array(rectangles), probs=confidences)
 
+    results = []
     # drawing rectangle on the Image
     for (start_x, start_y, end_x, end_y) in boxes:
         start_x = int(start_x * ratio_h)
@@ -59,7 +61,23 @@ def main(image, width, height, detector, min_confidence):
         end_y = int(end_y * ratio_w)
         # print('({},{}) - ({},{})'.format(start_x, start_y, end_x, end_y))
 
-        cv.rectangle(origin_image, (start_x, start_y), (end_x, end_y), (0, 255, 0), 2)
+        roi = origin_image[start_y:end_y, start_x:end_x]
+
+        # recognition Text
+        config = '-1 eng --oem 1 --psm 7'
+        text = pytesseract.image_to_string(roi, config = config)
+
+        results.append(((start_x, start_y, end_x, end_y), text))
+
+        results.sort(key=lambda r:r[0][1])
+
+        # cv.rectangle(origin_image, (start_x, start_y), (end_x, end_y), (0, 255, 0), 2)
+
+    # Drawing image
+    for (start_x, start_y, end_x, end_y), text in results:
+        cv.rectangle(origin_image, (start_x, start_y), (end_x, end_y), (0, 255, 0), 1)
+        print(text)
+        cv.putText(origin_image, text, (start_x, start_y), cv.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 1)
 
     cv.imshow('Detection !', origin_image)
     cv.waitKey(0)
@@ -67,6 +85,9 @@ def main(image, width, height, detector, min_confidence):
 
 if __name__ == '__main__':
     args = get_arguments()
+
+    # Setting path pytesseract
+    pytesseract.pytesseract.tesseract_cmd = '/usr/share/tesseract-ocr/4.00/tessdata'
 
     # main(image=args['image'], width=args['width'], height=args['height'],detector=args['east'], min_confidence=args['min_confidence'])
     image_path = '../data/The-architecture-of-CRNN-1-convolutional-layers-extracting-feature-from-the-original.png'
