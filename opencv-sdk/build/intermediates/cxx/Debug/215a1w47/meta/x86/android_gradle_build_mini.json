@@ -1,0 +1,27 @@
+{
+  "buildFiles": [
+    "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy/opencv-sdk/libcxx_helper/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/quyetna/Android/Sdk/cmake/3.18.1/bin/ninja",
+      "-C",
+      "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy/opencv-sdk/.cxx/Debug/215a1w47/x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/quyetna/Android/Sdk/cmake/3.18.1/bin/ninja",
+    "-C",
+    "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy/opencv-sdk/.cxx/Debug/215a1w47/x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "opencv_jni_shared::@6890427a1f51a3e7e1df": {
+      "artifactName": "opencv_jni_shared",
+      "abi": "x86",
+      "output": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy/opencv-sdk/.cxx/Debug/215a1w47/x86/libopencv_jni_shared.a",
+      "runtimeFiles": []
+    }
+  }
+}

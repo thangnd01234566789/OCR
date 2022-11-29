@@ -1,0 +1,1 @@
+/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy/opencv-sdk/build/intermediates/cxx/Debug/215a1w47/obj/x86_64

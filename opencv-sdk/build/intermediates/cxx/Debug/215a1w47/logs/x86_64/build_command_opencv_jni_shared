@@ -1,0 +1,4 @@
+/home/quyetna/Android/Sdk/cmake/3.18.1/bin/ninja \
+  -C \
+  /home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy/opencv-sdk/.cxx/Debug/215a1w47/x86_64 \
+  opencv_jni_shared

@@ -1,0 +1,44 @@
+[
+  {
+    "level_": 0,
+    "message_": "Start JSON generation. Platform version: 21 min SDK version: arm64-v8a",
+    "file_": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy/opencv-sdk/libcxx_helper/CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 242776315
+  },
+  {
+    "level_": 0,
+    "message_": "JSON \u0027/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy/opencv-sdk/.cxx/Debug/215a1w47/arm64-v8a/android_gradle_build.json\u0027 was up-to-date",
+    "file_": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy/opencv-sdk/libcxx_helper/CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": -631882076
+  },
+  {
+    "level_": 0,
+    "message_": "JSON generation completed without problems",
+    "file_": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy/opencv-sdk/libcxx_helper/CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {},
+      "fieldsDescending": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 1345482394
+  }
+]

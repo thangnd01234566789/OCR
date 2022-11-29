@@ -1,0 +1,2 @@
+ninja: Entering directory `/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy/opencv-sdk/.cxx/Debug/215a1w47/arm64-v8a'
+ninja: no work to do.

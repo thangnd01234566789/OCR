@@ -1,0 +1,1 @@
+/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy/opencv-sdk/libcxx_helper/CMakeLists.txt
