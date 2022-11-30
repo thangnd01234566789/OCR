@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
     //    Init Model
     private void initDetectionsModel() throws IOException {
-        textDetection = new TextDetection("lite-model_east-text-detector_int8_2.tflite", this, 320);
+        textDetection = new TextDetection("lite-model_east-text-detector_fp16_1.tflite","lite-model_keras-ocr_float16_2.tflite", this, 320);
         textDetection.init();
     }
     // Open Image

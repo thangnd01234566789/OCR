@@ -1,0 +1,171 @@
+{
+  "abi": "X86",
+  "info": {
+    "abi": "X86",
+    "bitness": 32,
+    "deprecated": false,
+    "default": true
+  },
+  "cxxBuildFolder": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/.cxx/Debug/6jpi595z/x86",
+  "soFolder": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/build/intermediates/cxx/Debug/6jpi595z/obj/x86",
+  "soRepublishFolder": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/build/intermediates/cmake/debug/obj/x86",
+  "abiPlatformVersion": 21,
+  "cmake": {
+    "effectiveConfiguration": {
+      "inheritEnvironments": [],
+      "variables": []
+    }
+  },
+  "variant": {
+    "buildSystemArgumentList": [
+      "-DANDROID_STL\u003dc++_shared"
+    ],
+    "cFlagsList": [],
+    "cppFlagsList": [],
+    "variantName": "debug",
+    "isDebuggableEnabled": true,
+    "validAbiList": [
+      "ARMEABI_V7A",
+      "ARM64_V8A",
+      "X86",
+      "X86_64"
+    ],
+    "buildTargetSet": [
+      "opencv_jni_shared"
+    ],
+    "implicitBuildTargetSet": [],
+    "cmakeSettingsConfiguration": "android-gradle-plugin-predetermined-name",
+    "module": {
+      "cxxFolder": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/.cxx",
+      "intermediatesBaseFolder": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/build/intermediates",
+      "intermediatesFolder": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/build/intermediates/cxx",
+      "gradleModulePathName": ":opencv-sdk",
+      "moduleRootFolder": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk",
+      "moduleBuildFile": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/build.gradle",
+      "makeFile": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/libcxx_helper/CMakeLists.txt",
+      "buildSystem": "CMAKE",
+      "ndkFolder": "/home/quyetna/Android/Sdk/ndk/23.1.7779620",
+      "ndkVersion": "23.1.7779620",
+      "ndkSupportedAbiList": [
+        "ARMEABI_V7A",
+        "ARM64_V8A",
+        "X86",
+        "X86_64"
+      ],
+      "ndkDefaultAbiList": [
+        "ARMEABI_V7A",
+        "ARM64_V8A",
+        "X86",
+        "X86_64"
+      ],
+      "ndkDefaultStl": "LIBCXX_STATIC",
+      "ndkMetaPlatforms": {
+        "min": 16,
+        "max": 31,
+        "aliases": {
+          "20": 19,
+          "25": 24,
+          "J": 16,
+          "J-MR1": 17,
+          "J-MR2": 18,
+          "K": 19,
+          "L": 21,
+          "L-MR1": 22,
+          "M": 23,
+          "N": 24,
+          "N-MR1": 24,
+          "O": 26,
+          "O-MR1": 27,
+          "P": 28,
+          "Q": 29,
+          "R": 30,
+          "S": 31
+        }
+      },
+      "ndkMetaAbiList": [
+        {
+          "abi": "ARMEABI_V7A",
+          "bitness": 32,
+          "deprecated": false,
+          "default": true
+        },
+        {
+          "abi": "ARM64_V8A",
+          "bitness": 64,
+          "deprecated": false,
+          "default": true
+        },
+        {
+          "abi": "X86",
+          "bitness": 32,
+          "deprecated": false,
+          "default": true
+        },
+        {
+          "abi": "X86_64",
+          "bitness": 64,
+          "deprecated": false,
+          "default": true
+        }
+      ],
+      "cmakeToolchainFile": "/home/quyetna/Android/Sdk/ndk/23.1.7779620/build/cmake/android.toolchain.cmake",
+      "cmake": {
+        "isValidCmakeAvailable": true,
+        "cmakeExe": "/home/quyetna/Android/Sdk/cmake/3.18.1/bin/cmake",
+        "minimumCmakeVersion": "3.18.1"
+      },
+      "stlSharedObjectMap": {
+        "LIBCXX_SHARED": {
+          "ARMEABI_V7A": "/home/quyetna/Android/Sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/arm-linux-androideabi/libc++_shared.so",
+          "ARM64_V8A": "/home/quyetna/Android/Sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so",
+          "X86": "/home/quyetna/Android/Sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/i686-linux-android/libc++_shared.so",
+          "X86_64": "/home/quyetna/Android/Sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/x86_64-linux-android/libc++_shared.so"
+        },
+        "LIBCXX_STATIC": {},
+        "NONE": {},
+        "SYSTEM": {}
+      },
+      "project": {
+        "rootBuildGradleFolder": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC",
+        "sdkFolder": "/home/quyetna/Android/Sdk",
+        "isBuildOnlyTargetAbiEnabled": true,
+        "isCmakeBuildCohabitationEnabled": false,
+        "isPrefabEnabled": false
+      },
+      "outputOptions": [],
+      "ninjaExe": "/home/quyetna/Android/Sdk/cmake/3.18.1/bin/ninja"
+    },
+    "prefabClassPaths": [],
+    "prefabPackages": [],
+    "prefabPackageConfigurations": [],
+    "stlType": "c++_shared",
+    "optimizationTag": "Debug"
+  },
+  "buildSettings": {
+    "environmentVariables": []
+  },
+  "prefabFolder": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/.cxx/Debug/6jpi595z/prefab/x86",
+  "isActiveAbi": true,
+  "fullConfigurationHash": "6jpi595zb2z411635386r5tf6o5c3v4k4n2r6s1a6dc591p3r3u20232144",
+  "configurationArguments": [
+    "-H/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/libcxx_helper",
+    "-DCMAKE_SYSTEM_NAME\u003dAndroid",
+    "-DCMAKE_EXPORT_COMPILE_COMMANDS\u003dON",
+    "-DCMAKE_SYSTEM_VERSION\u003d21",
+    "-DANDROID_PLATFORM\u003dandroid-21",
+    "-DANDROID_ABI\u003dx86",
+    "-DCMAKE_ANDROID_ARCH_ABI\u003dx86",
+    "-DANDROID_NDK\u003d/home/quyetna/Android/Sdk/ndk/23.1.7779620",
+    "-DCMAKE_ANDROID_NDK\u003d/home/quyetna/Android/Sdk/ndk/23.1.7779620",
+    "-DCMAKE_TOOLCHAIN_FILE\u003d/home/quyetna/Android/Sdk/ndk/23.1.7779620/build/cmake/android.toolchain.cmake",
+    "-DCMAKE_MAKE_PROGRAM\u003d/home/quyetna/Android/Sdk/cmake/3.18.1/bin/ninja",
+    "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY\u003d/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/build/intermediates/cxx/Debug/6jpi595z/obj/x86",
+    "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY\u003d/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/build/intermediates/cxx/Debug/6jpi595z/obj/x86",
+    "-DCMAKE_BUILD_TYPE\u003dDebug",
+    "-B/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/.cxx/Debug/6jpi595z/x86",
+    "-GNinja",
+    "-DANDROID_STL\u003dc++_shared"
+  ],
+  "stlLibraryFile": "/home/quyetna/Android/Sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/i686-linux-android/libc++_shared.so",
+  "intermediatesParentFolder": "/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/build/intermediates/cxx/Debug/6jpi595z"
+}

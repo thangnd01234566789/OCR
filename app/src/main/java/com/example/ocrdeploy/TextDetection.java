@@ -1,16 +1,15 @@
 package com.example.ocrdeploy;
 
 import android.app.Activity;
-import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.tensorflow.lite.DataType;
@@ -26,20 +25,17 @@ import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp;
 import org.tensorflow.lite.support.image.ops.Rot90Op;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 
 public class TextDetection {
     private String model_path;
+    private String model_recognition_path;
     private Interpreter tflite_Interpreter;
     private Activity activity;
     private int inputSize;
@@ -55,16 +51,20 @@ public class TextDetection {
     private TensorBuffer outputProbabilityBuffer_score;
     private TensorBuffer outputProbabilityBuffer_geometry;
     private TensorProcessor probabilityProcessor;
+    private TextRecognition textRecognition;
 
 
-    public TextDetection(String model_path, Activity activity, int inputSize){
+    public TextDetection(String model_path,String model_recognition_path, Activity activity, int inputSize){
         this.model_path = model_path;
         this.activity = activity;
         this.inputSize = inputSize;
+        this.model_recognition_path = model_recognition_path;
     }
 
     public void init() throws IOException{
         loadModel();
+        textRecognition = new TextRecognition(model_recognition_path, activity);
+        textRecognition.init();
     }
 
     private void loadModel() throws IOException {
@@ -93,49 +93,73 @@ public class TextDetection {
         inputImageBuffer = new TensorImage(imageDataType);
 
         // Creates The Output Tensor And Its Processor
-//        outputProbabilityBuffer_score = TensorBuffer.createFixedSize(probabilityShape_1, probabilityDataType_1);
-//        outputProbabilityBuffer_geometry = TensorBuffer.createFixedSize(probabilityShape_2, probabilityDataType_2);
+        outputProbabilityBuffer_score = TensorBuffer.createFixedSize(probabilityShape_1, probabilityDataType_1);
+        outputProbabilityBuffer_geometry = TensorBuffer.createFixedSize(probabilityShape_2, probabilityDataType_2);
 
-        outputProbabilityBuffer_score = TensorBuffer.createFixedSize(new int[]{1, 1, 80 , 80 }, probabilityDataType_1);
-        outputProbabilityBuffer_geometry = TensorBuffer.createFixedSize(new int[]{1, 5, 80, 80}, probabilityDataType_2);
+//        outputProbabilityBuffer_score = TensorBuffer.createFixedSize(new int[]{1, 1, 80 , 80 }, probabilityDataType_1);
+//        outputProbabilityBuffer_geometry = TensorBuffer.createFixedSize(new int[]{1, 5, 80, 80}, probabilityDataType_2);
 
-        probabilityProcessor = new TensorProcessor.Builder().add(getPOstprocessNormalizeOp()).build();
+        probabilityProcessor = new TensorProcessor.Builder().add(getPostprocessNormalizeOp()).build();
 
+//        1,80,80,1
+//        1,80,80,5
     }
 
-    private TensorOperator getPOstprocessNormalizeOp(){
+    private TensorOperator getPostprocessNormalizeOp(){
         return new NormalizeOp(PROBABILITY_MEAN, PROBABILITY_STD);
     }
 
     public Bitmap detections(Bitmap bitmap, int sensorOrientation){
         Mat matImg = new Mat(bitmap.getWidth(), bitmap.getHeight(), CvType.CV_8UC4);
+        Mat matCropImage = new Mat(bitmap.getWidth(), bitmap.getHeight(), CvType.CV_8UC4);
         Utils.bitmapToMat(bitmap, matImg);
+        Utils.bitmapToMat(bitmap, matCropImage);
+
         inputImageBuffer = loadImage(bitmap, sensorOrientation);
 
-        tflite_Interpreter.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer_score.getBuffer().rewind());
-        tflite_Interpreter.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer_geometry.getBuffer().rewind());
+        float w_ratio = bitmap.getWidth()/320f;
+        float h_ratio = bitmap.getHeight()/320f;
 
-        probabilityProcessor.process(outputProbabilityBuffer_score);
-        probabilityProcessor.process(outputProbabilityBuffer_geometry);
+        HashMap<Integer, Object> detectionOuput = new HashMap<Integer, Object>();
+        Object[] detectionInput = new Object[]{inputImageBuffer.getBuffer()};
 
-        int[] geometry = outputProbabilityBuffer_geometry.getIntArray();
-        int[] score = outputProbabilityBuffer_score.getIntArray();
+        detectionOuput.put(0, outputProbabilityBuffer_score.getBuffer().rewind());
+        detectionOuput.put(1, outputProbabilityBuffer_geometry.getBuffer().rewind());
 
-        ArrayList<List> box_extract = box_extractor(score, new int[]{1,1,80,80},geometry, new int[]{1, 5, 80,80}, 0.5f);
-        ArrayList<Integer> confidences = (ArrayList<Integer>) box_extract.get(1);
+//        tflite_Interpreter.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer_score.getBuffer().rewind());
+//        tflite_Interpreter.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer_geometry.getBuffer().rewind());
+        tflite_Interpreter.runForMultipleInputsOutputs(detectionInput, detectionOuput);
+
+//        probabilityProcessor.process(outputProbabilityBuffer_geometry);
+//        probabilityProcessor.process(outputProbabilityBuffer_score);
+
+        float[] geometry = outputProbabilityBuffer_geometry.getFloatArray();
+        float[] score = outputProbabilityBuffer_score.getFloatArray();
+
+        ArrayList<List> box_extract = box_extractor(score, new int[]{1,1,80,80},geometry, new int[]{1, 5, 80,80}, 0.50f);
+        ArrayList<Float> confidences = (ArrayList<Float>) box_extract.get(1);
         ArrayList<List> rectangles = (ArrayList<List>) box_extract.get(0);
 
         ArrayList<List> final_rectangle = non_max_suppression(rectangles, confidences, 0.3f);
-
         for (List<Integer> rect: final_rectangle) {
-            Imgproc.rectangle(matImg, new Point(rect.get(0), rect.get(1)), new Point(rect.get(2), rect.get(3)), new Scalar(255, 0, 255));
+            int x1 = (int)(rect.get(0) * w_ratio);
+            int y1 = (int) (h_ratio * rect.get(1));
+            int x2 = (int)(w_ratio*rect.get(2));
+            int y2 = (int)(w_ratio* rect.get(3));
+            Imgproc.rectangle(matImg, new Point(x1,y1), new Point(x2,y2), new Scalar(255, 0, 255));
+            Rect roi = new Rect(x1, y1, x2, y2);
+            Mat cropped = new Mat(matCropImage, roi);
+            Bitmap new_cropBitmap = Bitmap.createBitmap(x2-x1, y2 -y1,Bitmap.Config.RGB_565);
+            Utils.matToBitmap(matCropImage, new_cropBitmap);
+            Bitmap text_recog = textRecognition.recognitions(new_cropBitmap, 0);
+
         }
         Utils.matToBitmap(matImg, bitmap);
 
         return bitmap;
     }
 
-    private ArrayList<List> box_extractor(@NonNull int[] score, @NonNull int[] score_shape, @NonNull int[] geometry, @NonNull int[] geometry_shape, @NonNull float min_confidence) {
+    private ArrayList<List> box_extractor(@NonNull float[] score, @NonNull int[] score_shape, @NonNull float[] geometry, @NonNull int[] geometry_shape, @NonNull float min_confidence) {
         int num_rows = score_shape[2];
         int num_cols = score_shape[3];
         // Reshape To Score(1,1,80,80) / Geometry(1,5,80,80);
@@ -144,15 +168,15 @@ public class TextDetection {
         ArrayList<List> geometry_reshape = resize_box(geometry, geometry_shape);
         //
         ArrayList<List> rectangles = new ArrayList<List>();
-        ArrayList<Integer> confidences = new ArrayList<Integer>();
+        ArrayList<Float> confidences = new ArrayList<Float>();
 
         for (int x = 1; x <= num_rows; x = x + 1) {
-            List<Integer> score_data = (List<Integer>) (score_reshape.get(0)).get(x-1);
-            List<Integer> x_data0 = (List<Integer>) (geometry_reshape.get(0)).get(x-1);
-            List<Integer> x_data1 = (List<Integer>) (geometry_reshape.get(1)).get(x-1);
-            List<Integer> x_data2 = (List<Integer>) (geometry_reshape.get(2)).get(x-1);
-            List<Integer> x_data3 = (List<Integer>) (geometry_reshape.get(3)).get(x-1);
-            List<Integer> angles_data = (List<Integer>) (geometry_reshape.get(4)).get(x-1);
+            List<Float> score_data = (List<Float>) (score_reshape.get(0)).get(x-1);
+            List<Float> x_data0 = (List<Float>) (geometry_reshape.get(0)).get(x-1);
+            List<Float> x_data1 = (List<Float>) (geometry_reshape.get(1)).get(x-1);
+            List<Float> x_data2 = (List<Float>) (geometry_reshape.get(2)).get(x-1);
+            List<Float> x_data3 = (List<Float>) (geometry_reshape.get(3)).get(x-1);
+            List<Float> angles_data = (List<Float>) (geometry_reshape.get(4)).get(x-1);
 
             for (int y = 1; y <= num_cols; y = y + 1) {
                 if (score_data.get(y-1) < min_confidence)
@@ -161,10 +185,10 @@ public class TextDetection {
                 float offset_x = (float) ((y-1) * 4.0);
                 float offset_y = (float) ((x-1) * 4.0);
 
-                int box_h = x_data0.get(y-1) + x_data2.get(y-1);
-                int box_w = x_data1.get(y-1) + x_data3.get(y-1);
+                float box_h = x_data0.get(y-1) + x_data2.get(y-1);
+                float box_w = x_data1.get(y-1) + x_data3.get(y-1);
 
-                int angle = angles_data.get(y-1);
+                float angle = angles_data.get(y-1);
                 Double cos = Math.cos(angle);
                 Double sin = Math.sin(angle);
 
@@ -180,11 +204,10 @@ public class TextDetection {
         return new ArrayList<List>(Arrays.asList(rectangles, confidences));
     }
 
-    private ArrayList<List> non_max_suppression(ArrayList<List> rectangle, ArrayList<Integer> confideces, float overLapThresh){
-        int total_box = rectangle.size();
+    private ArrayList<List> non_max_suppression(ArrayList<List> rectangle, ArrayList<Float> confideces, float overLapThresh){
         ArrayList<List> final_box_detection = new ArrayList<List>();
         while (confideces.size() > 0){
-            int conf = Collections.max(confideces);
+            float conf = Collections.max(confideces);
             int index = confideces.indexOf(conf);
             ArrayList<Integer> list_index = new ArrayList<Integer>();
             List<Integer> box_current = rectangle.get(index);
@@ -231,21 +254,19 @@ public class TextDetection {
 
         int union_area = area1 + area2 - intersection_arae;
 
-        if (intersection_arae == 0 || union_area == 0)
-            return false;
-
         return (float)(intersection_arae / union_area) >= overlap_threshold ? true : false;
     }
 
-    private ArrayList<List> resize_box(@NonNull int[] box, @NonNull int [] box_shape){
+    private ArrayList<List> resize_box(@NonNull float[] box, @NonNull int [] box_shape){
         ArrayList<List> box_reshape = new ArrayList<List>();
-        int count = 0;
         for (int x = 1; x <= box_shape[1]; x = x + 1){
+            int count = 0;
             ArrayList<List> box_reshape_sub1 = new ArrayList<List>();
             for (int y = 1; y <= box_shape[2]; y = y + 1){
-                ArrayList<Integer> box_sub2 = new ArrayList<Integer>();
+                ArrayList<Float> box_sub2 = new ArrayList<Float>();
                 for (int z = 1 ; z <= box_shape[3]; z = z + 1){
-                    box_sub2.add(box[count++]);
+                    box_sub2.add(box[x - 1 + box_shape[1] * count]);
+                    count++;
                 }
                 box_reshape_sub1.add(box_sub2);
             }
@@ -263,7 +284,7 @@ public class TextDetection {
                 .add(new ResizeWithCropOrPadOp(cropSize,cropSize))
                 .add(new ResizeOp(imageSizeX, imageSizeY, ResizeOp.ResizeMethod.NEAREST_NEIGHBOR))
                 .add(new Rot90Op(numRoration))
-                .add(getPOstprocessNormalizeOp())
+                .add(getPostprocessNormalizeOp())
                 .build();
 
         return imageProcessor.process(inputImageBuffer);

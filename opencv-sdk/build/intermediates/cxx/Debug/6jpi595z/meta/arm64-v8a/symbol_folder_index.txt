@@ -1,0 +1,1 @@
+/home/quyetna/Documents/thangdaubo/ocr_paper/ocr_deploy_sam/ORC/opencv-sdk/build/intermediates/cxx/Debug/6jpi595z/obj/arm64-v8a
