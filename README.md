@@ -1,2 +1,2 @@
-# ORC
-ORC
+# OCR
+OCR
