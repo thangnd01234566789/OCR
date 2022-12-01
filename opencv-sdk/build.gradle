@@ -97,6 +97,12 @@ buildscript {
     }
     repositories {
         mavenCentral()
+        maven {  // Only for snapshot artifacts
+            name 'ossrh-snapshot'
+            url 'https://oss.sonatype.org/content/repositories/snapshots'
+        }
+        mavenLocal()
+
     }
 }
 

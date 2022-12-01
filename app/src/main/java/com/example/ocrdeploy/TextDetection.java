@@ -110,6 +110,10 @@ public class TextDetection {
     }
 
     public Bitmap detections(Bitmap bitmap, int sensorOrientation){
+        Bitmap new_bitMap = bitmap.copy(bitmap.getConfig(), false);
+        Mat newmatImg = new Mat(bitmap.getWidth(), bitmap.getHeight(), CvType.CV_8UC4);
+        Utils.bitmapToMat(new_bitMap, newmatImg);
+
         Mat matImg = new Mat(bitmap.getWidth(), bitmap.getHeight(), CvType.CV_8UC4);
         Mat matCropImage = new Mat(bitmap.getWidth(), bitmap.getHeight(), CvType.CV_8UC4);
         Utils.bitmapToMat(bitmap, matImg);
@@ -144,19 +148,21 @@ public class TextDetection {
         for (List<Integer> rect: final_rectangle) {
             int x1 = (int)(rect.get(0) * w_ratio);
             int y1 = (int) (h_ratio * rect.get(1));
-            int x2 = (int)(w_ratio*rect.get(2));
-            int y2 = (int)(w_ratio* rect.get(3));
-            Imgproc.rectangle(matImg, new Point(x1,y1), new Point(x2,y2), new Scalar(255, 0, 255));
-            Rect roi = new Rect(x1, y1, x2, y2);
+            int x2 = (int)(w_ratio * rect.get(2));
+            int y2 = (int)(h_ratio * rect.get(3));
+
+            Rect roi = new Rect(new Point(x1, y1),new Point(x2, y2));
             Mat cropped = new Mat(matCropImage, roi);
-            Bitmap new_cropBitmap = Bitmap.createBitmap(x2-x1, y2 -y1,Bitmap.Config.RGB_565);
-            Utils.matToBitmap(matCropImage, new_cropBitmap);
-            Bitmap text_recog = textRecognition.recognitions(new_cropBitmap, 0);
-
+            Bitmap new_cropBitmap = Bitmap.createBitmap(cropped.cols(),cropped.rows(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(cropped, new_cropBitmap);
+            String text_recog = textRecognition.recognitions(new_cropBitmap, 0);
+            Imgproc.rectangle(newmatImg, new Point(x1,y1), new Point(x2,y2), new Scalar(255, 0, 255));
+            if (text_recog.length() > 0)
+                Imgproc.putText(newmatImg, text_recog , new Point(x1, y1), 3, 1, new Scalar(0, 0, 255), 1);
         }
-        Utils.matToBitmap(matImg, bitmap);
+        Utils.matToBitmap(newmatImg, new_bitMap);
 
-        return bitmap;
+        return new_bitMap;
     }
 
     private ArrayList<List> box_extractor(@NonNull float[] score, @NonNull int[] score_shape, @NonNull float[] geometry, @NonNull int[] geometry_shape, @NonNull float min_confidence) {

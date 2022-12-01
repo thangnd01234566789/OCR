@@ -17,6 +17,7 @@ import org.opencv.imgproc.Imgproc;
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Delegate;
 import org.tensorflow.lite.Interpreter;
+import org.tensorflow.lite.Tensor;
 import org.tensorflow.lite.support.common.FileUtil;
 import org.tensorflow.lite.support.common.TensorOperator;
 import org.tensorflow.lite.support.common.TensorProcessor;
@@ -26,10 +27,14 @@ import org.tensorflow.lite.support.image.TensorImage;
 import org.tensorflow.lite.support.image.ops.ResizeOp;
 import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp;
 import org.tensorflow.lite.support.image.ops.Rot90Op;
+//import org.tensorflow.lite.support.image.ops.TransformToGrayscaleOp;
+import org.tensorflow.lite.support.image.ops.TransformToGrayscaleOp;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -54,6 +59,8 @@ public class TextRecognition {
     private TensorBuffer outputProbabilityBuffer;
     private TensorProcessor probabilityProcessor;
     private LiteModelKerasOcrDr2 model;
+    private static final String alphabets = "0123456789abcdefghijklmnopqrstuvwxyz";
+    ByteBuffer outputByteBuffer;
 
 
     public TextRecognition(String model_path, Activity activity){
@@ -62,46 +69,52 @@ public class TextRecognition {
     }
 
     public void init() throws IOException {
+        imageSizeX = 31;
+        imageSizeY = 200;
         loadModel();
     }
 
     private void loadModel() throws IOException {
-//        tfliteModel = FileUtil.loadMappedFile(activity, model_path);
-//        // Create a TFLITE interpreter instance
-//        boolean useGPU = true;
-//
-//        tflite_Interpreter = new Interpreter(tfliteModel);
-//
-//        // Read type and shape of input and output tensors, respectively
-//        int imageTensorIndex = 0;
-//        int[] imageShape = tflite_Interpreter.getInputTensor(imageTensorIndex).shape();
-//        imageSizeY = imageShape[1];
-//        imageSizeX = imageShape[2];
-//
-//        DataType imageDataType = tflite_Interpreter.getInputTensor(imageTensorIndex).dataType();
-//
-//        // Hava 2 Out put Score And Geometry
-//        int probabilityTensorIndex_1 = 0;
-//
-//        int[] probabilityShape_1 = tflite_Interpreter.getOutputTensor(probabilityTensorIndex_1).shape();
-//
-//        DataType probabilityDataType_1 = tflite_Interpreter.getOutputTensor(probabilityTensorIndex_1).dataType();
-//        // Creates the input tensor
-//        inputImageBuffer = new TensorImage(imageDataType);
-//
-//        // Creates The Output Tensor And Its Processor
-//        outputProbabilityBuffer = TensorBuffer.createFixedSize(probabilityShape_1, probabilityDataType_1);
-//
-//        probabilityProcessor = new TensorProcessor.Builder().add(getPostprocessNormalizeOp()).build();
+        tfliteModel = FileUtil.loadMappedFile(activity, model_path);
+        // Create a TFLITE interpreter instance
+        boolean useGPU = true;
 
-        try {
-            model = LiteModelKerasOcrDr2.newInstance(activity);
+        tflite_Interpreter = new Interpreter(tfliteModel);
 
-            // Creates inputs for reference.
-        } catch (IOException e) {
-            // TODO Handle the exception
-        }
+        // Read type and shape of input and output tensors, respectively
+        int imageTensorIndex = 0;
+        int[] imageShape = tflite_Interpreter.getInputTensor(imageTensorIndex).shape();
+        imageSizeY = imageShape[1];
+        imageSizeX = imageShape[2];
 
+        DataType imageDataType = tflite_Interpreter.getInputTensor(imageTensorIndex).dataType();
+
+        // Hava 2 Out put Score And Geometry
+        int probabilityTensorIndex_1 = 0;
+
+        int[] probabilityShape_1 = tflite_Interpreter.getOutputTensor(probabilityTensorIndex_1).shape();
+
+        DataType probabilityDataType_1 = tflite_Interpreter.getOutputTensor(probabilityTensorIndex_1).dataType();
+        // Creates the input tensor
+        inputImageBuffer = new TensorImage(imageDataType);
+
+
+//        outputProbabilityBuffer =
+        // Creates The Output Tensor And Its Processor
+        outputProbabilityBuffer = TensorBuffer.createFixedSize(probabilityShape_1, DataType.UINT8);
+        outputByteBuffer = ByteBuffer.allocateDirect(8 * probabilityShape_1[1]);
+
+        probabilityProcessor = new TensorProcessor.Builder().add(getPostprocessNormalizeOp()).build();
+
+//        try {
+//            model = LiteModelKerasOcrDr2.newInstance(activity);
+//            inputImageBuffer = new TensorImage(DataType.FLOAT32);
+//
+//            // Creates inputs for reference.
+//        } catch (IOException e) {
+//            // TODO Handle the exception
+//        }
+//        # char_list:   'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
     }
 
     private MappedByteBuffer getModel(Activity activity) throws IOException {
@@ -117,7 +130,7 @@ public class TextRecognition {
         return new NormalizeOp(PROBABILITY_MEAN, PROBABILITY_STD);
     }
 
-    public Bitmap recognitions(Bitmap bitmap, int sensorOrientation){
+    public String recognitions(Bitmap bitmap, int sensorOrientation){
 
         Mat matImg = new Mat(bitmap.getWidth(), bitmap.getHeight(), CvType.CV_8UC1);
         Utils.bitmapToMat(bitmap, matImg);
@@ -125,22 +138,17 @@ public class TextRecognition {
         Utils.matToBitmap(matImg, bitmap);
 
         inputImageBuffer = loadImage(bitmap, sensorOrientation);
+        tflite_Interpreter.run(inputImageBuffer.getBuffer(),outputByteBuffer);
 
-        tflite_Interpreter.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer.getBuffer().rewind());
+        String prediction = "";
+        for (int x = 0; x < 48; x = x + 1){
+            int index = outputByteBuffer.get(x * 8);
+            if (0 <= index && index <= (alphabets.length() - 1)){
+                prediction += alphabets.toCharArray()[index];
+            }
+        }
 
-        TensorBuffer inputFeature0 = TensorBuffer.createFixedSize(new int[]{1, 31, 200, 1}, DataType.FLOAT32);
-        inputFeature0.loadBuffer(inputImageBuffer.getBuffer());
-
-        // Runs model inference and gets result.
-        LiteModelKerasOcrDr2.Outputs outputs = model.process(inputFeature0);
-        TensorBuffer outputFeature0 = outputs.getOutputFeature0AsTensorBuffer();
-
-        // Releases model resources if no longer used.
-
-
-        Utils.matToBitmap(matImg, bitmap);
-
-        return bitmap;
+        return prediction;
     }
 
     private ArrayList<List> resize_box(@NonNull float[] box, @NonNull int [] box_shape){
@@ -171,6 +179,7 @@ public class TextRecognition {
                 .add(new ResizeOp(imageSizeX, imageSizeY, ResizeOp.ResizeMethod.NEAREST_NEIGHBOR))
                 .add(new Rot90Op(numRoration))
                 .add(getPostprocessNormalizeOp())
+                .add(new TransformToGrayscaleOp())
                 .build();
 
         return imageProcessor.process(inputImageBuffer);
