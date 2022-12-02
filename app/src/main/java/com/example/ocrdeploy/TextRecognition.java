@@ -3,6 +3,8 @@ package com.example.ocrdeploy;
 import android.app.Activity;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.ColorSpace;
 
 import androidx.annotation.NonNull;
 
@@ -22,6 +24,8 @@ import org.tensorflow.lite.support.common.FileUtil;
 import org.tensorflow.lite.support.common.TensorOperator;
 import org.tensorflow.lite.support.common.TensorProcessor;
 import org.tensorflow.lite.support.common.ops.NormalizeOp;
+import org.tensorflow.lite.support.image.ColorSpaceType;
+import org.tensorflow.lite.support.image.ImageOperator;
 import org.tensorflow.lite.support.image.ImageProcessor;
 import org.tensorflow.lite.support.image.TensorImage;
 import org.tensorflow.lite.support.image.ops.ResizeOp;
@@ -34,6 +38,7 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -47,10 +52,8 @@ public class TextRecognition {
     private String model_path;
     private Interpreter tflite_Interpreter;
     private Activity activity;
-    private final static float IMAGE_MEAN = 128;
-    private final static float IMAGE_STD = 128f;
     private static final float PROBABILITY_MEAN = 0.0f;
-    private static final float PROBABILITY_STD = 1.0f;
+    private static final float PROBABILITY_STD = 255f;
 
     private MappedByteBuffer tfliteModel;
     private int imageSizeX;
@@ -131,24 +134,36 @@ public class TextRecognition {
     }
 
     public String recognitions(Bitmap bitmap, int sensorOrientation){
+        try {
+            loadModel();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        Mat matImg = new Mat(bitmap.getWidth(), bitmap.getHeight(), CvType.CV_8UC1);
+        Mat matImg = new Mat(bitmap.getHeight(), bitmap.getWidth(), CvType.CV_8UC1);
         Utils.bitmapToMat(bitmap, matImg);
         Imgproc.cvtColor(matImg, matImg, Imgproc.COLOR_RGB2GRAY);
         Utils.matToBitmap(matImg, bitmap);
 
-        inputImageBuffer = loadImage(bitmap, sensorOrientation);
-        tflite_Interpreter.run(inputImageBuffer.getBuffer(),outputByteBuffer);
+//        inputImageBuffer = loadImage(bitmap, sensorOrientation);
+        ByteBuffer inputImage = convertBitmapToBuffer(bitmap);
+        tflite_Interpreter.run(inputImage,outputByteBuffer);
 
         String prediction = "";
-        for (int x = 0; x < 48; x = x + 1){
+        for (int x = 0; x < 48; x = x + 1) {
             int index = outputByteBuffer.get(x * 8);
-            if (0 <= index && index <= (alphabets.length() - 1)){
+            if (0 <= index && index <= (alphabets.length() - 1)) {
                 prediction += alphabets.toCharArray()[index];
             }
         }
 
+        tflite_Interpreter.close();
+
         return prediction;
+    }
+
+    public void close_model(){
+        tflite_Interpreter.close();
     }
 
     private ArrayList<List> resize_box(@NonNull float[] box, @NonNull int [] box_shape){
@@ -172,16 +187,35 @@ public class TextRecognition {
     private TensorImage loadImage(Bitmap bitmap, int senorOrientation){
         inputImageBuffer.load(bitmap);
         int cropSize = Math.min(bitmap.getWidth(), bitmap.getHeight());
-        int numRoration = senorOrientation / 90;
         // Define an ImageProcessor From TFlite to do preprocessing
         ImageProcessor imageProcessor = new ImageProcessor.Builder()
-                .add(new ResizeWithCropOrPadOp(cropSize,cropSize))
-                .add(new ResizeOp(imageSizeX, imageSizeY, ResizeOp.ResizeMethod.NEAREST_NEIGHBOR))
-                .add(new Rot90Op(numRoration))
-                .add(getPostprocessNormalizeOp())
+                .add(new ResizeOp(imageSizeX, imageSizeY, ResizeOp.ResizeMethod.BILINEAR))
                 .add(new TransformToGrayscaleOp())
+                .add(getPostprocessNormalizeOp())
                 .build();
 
         return imageProcessor.process(inputImageBuffer);
     }
+
+    private ByteBuffer convertBitmapToBuffer(Bitmap bitmap){
+
+//        Resize Image To InputSize
+        bitmap = Bitmap.createScaledBitmap(bitmap, imageSizeX, imageSizeY, true);
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(4 * imageSizeX * imageSizeY);
+        byteBuffer.order(ByteOrder.nativeOrder());
+        int[] initValues = new int[imageSizeX * imageSizeY];
+
+//        Get Color RBG Of Bitmap
+        bitmap.getPixels(initValues, 0, bitmap.getWidth(), 0 , 0 , bitmap.getWidth(), bitmap.getHeight());
+        int pixel = 0;
+        for (int i = 0; i < imageSizeX; i = i + 1){
+            for (int b = 0 ; b < imageSizeY ; b = b + 1){
+                int input = initValues[pixel++];
+                byteBuffer.putFloat((float) Color.red(input)/PROBABILITY_STD);
+            }
+        }
+        return byteBuffer;
+    }
+
+
 }

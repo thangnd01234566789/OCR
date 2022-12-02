@@ -39,9 +39,7 @@ public class TextDetection {
     private Interpreter tflite_Interpreter;
     private Activity activity;
     private int inputSize;
-    private final static float IMAGE_MEAN = 128;
-    private final static float IMAGE_STD = 128f;
-    private static final float PROBABILITY_MEAN = 0.0f;
+    private static final float PROBABILITY_MEAN = 128f;
     private static final float PROBABILITY_STD = 1.0f;
 
     private MappedByteBuffer tfliteModel;
@@ -110,14 +108,9 @@ public class TextDetection {
     }
 
     public Bitmap detections(Bitmap bitmap, int sensorOrientation){
-        Bitmap new_bitMap = bitmap.copy(bitmap.getConfig(), false);
-        Mat newmatImg = new Mat(bitmap.getWidth(), bitmap.getHeight(), CvType.CV_8UC4);
-        Utils.bitmapToMat(new_bitMap, newmatImg);
-
-        Mat matImg = new Mat(bitmap.getWidth(), bitmap.getHeight(), CvType.CV_8UC4);
-        Mat matCropImage = new Mat(bitmap.getWidth(), bitmap.getHeight(), CvType.CV_8UC4);
+        Mat matImg = new Mat(bitmap.getHeight(), bitmap.getWidth(), CvType.CV_8UC3);
         Utils.bitmapToMat(bitmap, matImg);
-        Utils.bitmapToMat(bitmap, matCropImage);
+
 
         inputImageBuffer = loadImage(bitmap, sensorOrientation);
 
@@ -130,12 +123,7 @@ public class TextDetection {
         detectionOuput.put(0, outputProbabilityBuffer_score.getBuffer().rewind());
         detectionOuput.put(1, outputProbabilityBuffer_geometry.getBuffer().rewind());
 
-//        tflite_Interpreter.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer_score.getBuffer().rewind());
-//        tflite_Interpreter.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer_geometry.getBuffer().rewind());
         tflite_Interpreter.runForMultipleInputsOutputs(detectionInput, detectionOuput);
-
-//        probabilityProcessor.process(outputProbabilityBuffer_geometry);
-//        probabilityProcessor.process(outputProbabilityBuffer_score);
 
         float[] geometry = outputProbabilityBuffer_geometry.getFloatArray();
         float[] score = outputProbabilityBuffer_score.getFloatArray();
@@ -144,25 +132,46 @@ public class TextDetection {
         ArrayList<Float> confidences = (ArrayList<Float>) box_extract.get(1);
         ArrayList<List> rectangles = (ArrayList<List>) box_extract.get(0);
 
+
+
         ArrayList<List> final_rectangle = non_max_suppression(rectangles, confidences, 0.3f);
+
+        int count_index = 0;
         for (List<Integer> rect: final_rectangle) {
             int x1 = (int)(rect.get(0) * w_ratio);
             int y1 = (int) (h_ratio * rect.get(1));
             int x2 = (int)(w_ratio * rect.get(2));
             int y2 = (int)(h_ratio * rect.get(3));
+            x1 = x1 > bitmap.getWidth() ? bitmap.getWidth() : x1;
+            x2 = x2 > bitmap.getWidth() ? bitmap.getWidth() : x2;
+            y1 = y1 > bitmap.getHeight() ? bitmap.getHeight() : y1;
+            y2 = y2 > bitmap.getHeight() ? bitmap.getHeight() : y2;
 
+
+            Mat matCropImage = new Mat(bitmap.getHeight(), bitmap.getWidth(), CvType.CV_8UC3);
+            Utils.bitmapToMat(bitmap, matCropImage);
             Rect roi = new Rect(new Point(x1, y1),new Point(x2, y2));
             Mat cropped = new Mat(matCropImage, roi);
             Bitmap new_cropBitmap = Bitmap.createBitmap(cropped.cols(),cropped.rows(), Bitmap.Config.ARGB_8888);
+            Imgproc.cvtColor(cropped, cropped, Imgproc.COLOR_RGBA2GRAY);
             Utils.matToBitmap(cropped, new_cropBitmap);
-            String text_recog = textRecognition.recognitions(new_cropBitmap, 0);
-            Imgproc.rectangle(newmatImg, new Point(x1,y1), new Point(x2,y2), new Scalar(255, 0, 255));
-            if (text_recog.length() > 0)
-                Imgproc.putText(newmatImg, text_recog , new Point(x1, y1), 3, 1, new Scalar(0, 0, 255), 1);
-        }
-        Utils.matToBitmap(newmatImg, new_bitMap);
+//
+//            Bitmap cropted_cropBitmap = Bitmap.createBitmap(matCropImage.cols(),matCropImage.rows(), Bitmap.Config.ARGB_8888);
+//            Utils.matToBitmap(matCropImage, cropted_cropBitmap);
 
-        return new_bitMap;
+            String text_recog = textRecognition.recognitions(new_cropBitmap, 0);
+            if (text_recog.length() > 0)
+            {
+                Imgproc.putText(matImg, text_recog , new Point(x1, y1), 1, 2, new Scalar(100,0, 0, 255), 1);
+            }
+
+            Imgproc.rectangle(matImg, new Point(x1,y1), new Point(x2,y2), new Scalar(100 ,0, 255, 255), 2);
+            count_index ++;
+        }
+
+        Utils.matToBitmap(matImg, bitmap);
+
+        return bitmap;
     }
 
     private ArrayList<List> box_extractor(@NonNull float[] score, @NonNull int[] score_shape, @NonNull float[] geometry, @NonNull int[] geometry_shape, @NonNull float min_confidence) {
@@ -213,21 +222,21 @@ public class TextDetection {
     private ArrayList<List> non_max_suppression(ArrayList<List> rectangle, ArrayList<Float> confideces, float overLapThresh){
         ArrayList<List> final_box_detection = new ArrayList<List>();
         while (confideces.size() > 0){
-            float conf = Collections.max(confideces);
-            int index = confideces.indexOf(conf);
+            int index = confideces.indexOf(Collections.max(confideces));
             ArrayList<Integer> list_index = new ArrayList<Integer>();
             List<Integer> box_current = rectangle.get(index);
             final_box_detection.add(box_current);
             rectangle.remove(index);
             confideces.remove(index);
-            for (int b = 0; b < confideces.size(); b = b + 1){
-                if (IOU(box_current, rectangle.get(b), overLapThresh)){
-                    list_index.add(b);
+            int start_index = 0;
+            while (start_index < confideces.size()){
+                if (IOU(box_current, rectangle.get(start_index), overLapThresh)){
+                    confideces.remove(start_index);
+                    rectangle.remove(start_index);
                 }
-            }
-            for (int b:list_index) {
-                confideces.remove(b);
-                rectangle.remove(b);
+                else{
+                    start_index ++;
+                }
             }
         }
         return final_box_detection;
@@ -248,10 +257,10 @@ public class TextDetection {
         int area1 = (x2 - x1) * (y2 - y1);
         int area2 = (x4 - x3) * (y4 - y3);
 
-        int x1_iou = x2 > x1 ? x2 : x1;
-        int y1_iou = y2 > y1 ? y2 : y1;
-        int x2_iou = x3 < x4 ? x3 : x4;
-        int y2_iou = y3 < y4 ? y3 : y4;
+        int x1_iou = x3 > x1 ? x3 : x1;
+        int y1_iou = y3 > y1 ? y3 : y1;
+        int x2_iou = x2 < x4 ? x2 : x4;
+        int y2_iou = y2 < y4 ? y2 : y4;
 
         int w_iou = 0 > (x2_iou - x1_iou) ? 0 : (x2_iou - x1_iou);
         int h_iou = 0 > (y2_iou - y1_iou) ? 0 : (y2_iou - y1_iou);
@@ -260,7 +269,7 @@ public class TextDetection {
 
         int union_area = area1 + area2 - intersection_arae;
 
-        return (float)(intersection_arae / union_area) >= overlap_threshold ? true : false;
+        return (intersection_arae * 1.0 / union_area) >= overlap_threshold ? true : false;
     }
 
     private ArrayList<List> resize_box(@NonNull float[] box, @NonNull int [] box_shape){
@@ -287,7 +296,6 @@ public class TextDetection {
         int numRoration = senorOrientation / 90;
         // Define an ImageProcessor From TFlite to do preprocessing
         ImageProcessor imageProcessor = new ImageProcessor.Builder()
-                .add(new ResizeWithCropOrPadOp(cropSize,cropSize))
                 .add(new ResizeOp(imageSizeX, imageSizeY, ResizeOp.ResizeMethod.NEAREST_NEIGHBOR))
                 .add(new Rot90Op(numRoration))
                 .add(getPostprocessNormalizeOp())

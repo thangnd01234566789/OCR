@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView imageView;
     private final String CV_LOG = "OPENCV_LOADER";
     private TextDetection textDetection;
-    private static final int CAMERA_REQUEST = 100;
+    private static final int CAMERA_REQUEST = 1888;
     private Uri imgUri;
     private Bitmap imgBitmap;
     private Button button_1 ;
@@ -89,8 +89,10 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        Bitmap predict = textDetection.detections(imgBitmap, 0);
+        Bitmap predict = null;
+        predict = textDetection.detections(imgBitmap, 0);
         imageView.setImageBitmap(predict);
+
 //        imageView.setImageBitmap(imgBitmap);
     }
 
